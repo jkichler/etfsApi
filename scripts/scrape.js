@@ -72,7 +72,6 @@ const scrape = async (browser, url) => {
           });
         }
       }
-
       return {
         description: description,
         sectorWeights: sectorList,
@@ -80,6 +79,7 @@ const scrape = async (browser, url) => {
         topHoldings: topHoldings
       };
     });
+    await page.close();
     return result;
   } catch (error) {
     console.error(error);
