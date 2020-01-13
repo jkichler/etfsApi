@@ -127,6 +127,12 @@ const getData = async () => {
     //scraping and modifying data on each fund returned
     // eslint-disable-next-line complexity
     for (let i = 0; i < etfs.length; i++) {
+      browser = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        timeout: 3000000
+      });
       let etf = etfs[i];
       let newFund = false;
       try {
@@ -184,6 +190,7 @@ const getData = async () => {
       } catch (error) {
         console.error(error);
       }
+      browser.close();
     }
   } catch (error) {
     browser.close();
@@ -193,16 +200,14 @@ const getData = async () => {
 };
 
 const runGetData = async () => {
-  browser = await puppeteer.launch({
-    ignoreHTTPSErrors: true,
-    headless: true,
-    //args: ['--disable-dev-shm-usage']
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    timeout: 3000000
-    //slowMo: 1000
-  });
+  // browser = await puppeteer.launch({
+  //   ignoreHTTPSErrors: true,
+  //   headless: true,
+  //   args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  //   timeout: 3000000
+  // });
   await getData().then(value => {
-    browser.close();
+    //browser.close();
     console.log('done');
   });
 };
