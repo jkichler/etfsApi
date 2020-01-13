@@ -5,8 +5,7 @@ const models = require('../db/models');
 
 let browser;
 
-
-const createHolding = async (holding) => {
+const createHolding = async holding => {
   try {
     const dbHolding = await models.Holdings.create(holding);
     return dbHolding;
@@ -35,28 +34,35 @@ const validateWeights = async (fundId, scrapedData, type) => {
       where: {
         id: fundId
       },
-      include: [{
-        model: models.Holdings
-      }]
-    });
-    await Promise.all(dataValues.holdings.map(async holding => {
-      try {
-        if (holding.dataValues.type === type && scrapedData.indexOf(holding.dataValues.name) === -1) {
-          // delete holding association if it is no longer valid
-          await models.Weights.destroy({
-            where: {
-              fundId: fundId,
-              holdingId: holding.dataValues.id
-            }
-          })
+      include: [
+        {
+          model: models.Holdings
         }
-      } catch (error) {
-        console.error(error)
-      }
-      return holding
-    }))
+      ]
+    });
+    await Promise.all(
+      dataValues.holdings.map(async holding => {
+        try {
+          if (
+            holding.dataValues.type === type &&
+            scrapedData.indexOf(holding.dataValues.name) === -1
+          ) {
+            // delete holding association if it is no longer valid
+            await models.Weights.destroy({
+              where: {
+                fundId: fundId,
+                holdingId: holding.dataValues.id
+              }
+            });
+          }
+        } catch (error) {
+          console.error(error);
+        }
+        return holding;
+      })
+    );
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 };
 
@@ -74,33 +80,42 @@ const updateHoldings = async (dbFund, scrapedData, type) => {
         dbHolding = await createHolding({
           name: Object.keys(holding)[0],
           type: type
-      });
+        });
       }
       // create or update weights
       let weight = await models.Weights.findOne({
         where: {
-        fundId: dbFund.dataValues.id,
-        holdingId: dbHolding.dataValues.id
+          fundId: dbFund.dataValues.id,
+          holdingId: dbHolding.dataValues.id
         }
       });
       if (!weight) {
-        weight = await createWeight(dbFund.dataValues.id, dbHolding.dataValues.id, holding[Object.keys(holding)[0]]);
+        weight = await createWeight(
+          dbFund.dataValues.id,
+          dbHolding.dataValues.id,
+          holding[Object.keys(holding)[0]]
+        );
       }
       return holding;
     } catch (error) {
       console.error(error);
     }
   });
-  await Promise.all(holdingsPromise).catch(err => console.error(err))
+  await Promise.all(holdingsPromise).catch(err => console.error(err));
   //if holdings change validate weight entries to remove old holdings
-  await validateWeights(dbFund.dataValues.id, scrapedData.map( el => Object.keys(el)[0]), type);
-}
-
+  await validateWeights(
+    dbFund.dataValues.id,
+    scrapedData.map(el => Object.keys(el)[0]),
+    type
+  );
+};
 
 const getData = async () => {
   try {
     // getting funds json file
-    const { data } = await axios.get('https://www.ssga.com/bin/v1/ssmp/fund/fundfinder?country=us&language=en&role=intermediary&product=etfs&ui=fund-finder');
+    const { data } = await axios.get(
+      'https://www.ssga.com/bin/v1/ssmp/fund/fundfinder?country=us&language=en&role=intermediary&product=etfs&ui=fund-finder'
+    );
     const etfs = data.data.us.funds.etfs.overview.datas;
 
     //scraping and modifying data on each fund returned
@@ -108,15 +123,20 @@ const getData = async () => {
     let mappedEtfs = await etfs.slice(0, 140).map(async etf => {
       let newFund = false;
       try {
-        const scrapedData = await scrape(browser, `https://www.ssga.com${etf.fundUri}`);
+        const scrapedData = await scrape(
+          browser,
+          `https://www.ssga.com${etf.fundUri}`
+        );
         // check to see if fund already exists in DB, if not create it
         let dbFund = await models.Funds.findOne({
           where: {
             ticker: etf.fundTicker
           },
-          include: [{
-            model: models.Holdings
-          }]
+          include: [
+            {
+              model: models.Holdings
+            }
+          ]
         });
         //if fund does not exist, create it
         if (!dbFund) {
@@ -130,19 +150,23 @@ const getData = async () => {
         }
         // check for and create top holdings if needed
         if (dbFund.dataValues.asOfDate !== etf.asOfDate[1] || newFund) {
-            if (scrapedData.topHoldings) {
-              await updateHoldings(dbFund, scrapedData.topHoldings, 'topHoldings');
-            }
-            // check and create sectors if needed
-            if (scrapedData.sectorWeights) {
-              await updateHoldings(dbFund, scrapedData.sectorWeights, 'sector');
-            }
-            if (scrapedData.countryWeights) {
-              await updateHoldings(dbFund, scrapedData.countryWeights, 'country');
-            }
+          if (scrapedData.topHoldings) {
+            await updateHoldings(
+              dbFund,
+              scrapedData.topHoldings,
+              'topHoldings'
+            );
           }
+          // check and create sectors if needed
+          if (scrapedData.sectorWeights) {
+            await updateHoldings(dbFund, scrapedData.sectorWeights, 'sector');
+          }
+          if (scrapedData.countryWeights) {
+            await updateHoldings(dbFund, scrapedData.countryWeights, 'country');
+          }
+        }
         if (dbFund.dataValues.asOfDate !== etf.asOfDate[1]) {
-          console.log('updating fund')
+          console.log('updating fund');
           await dbFund.update({
             name: etf.fundName,
             ticker: etf.fundTicker,
@@ -153,7 +177,7 @@ const getData = async () => {
       } catch (error) {
         console.error(error);
       }
-      });
+    });
 
     return Promise.all(mappedEtfs);
   } catch (error) {
@@ -166,12 +190,10 @@ const getData = async () => {
 const runGetData = async () => {
   browser = await puppeteer.launch({
     headless: true,
-    args: [
-      '--disable-dev-shm-usage',
-    ],
+    args: ['--disable-dev-shm-usage']
   });
-await getData().then(value => console.log('done'));
-browser.close();
+  await getData().then(value => console.log('done'));
+  browser.close();
 };
 
 runGetData();
