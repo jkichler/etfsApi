@@ -108,13 +108,14 @@ const updateHoldings = async (dbFund, scrapedData, type) => {
   let updatedHoldings = await Promise.all(holdings).catch(err =>
     console.error(err)
   );
+
   console.log(updatedHoldings.length + ' holdings checked and or updated');
   //if holdings change validate weight entries to remove old holdings
   let toValidate = scrapedData.map(el => Object.keys(el)[0]);
-  let removedHoldings = Promise.all(
-    validateWeights(dbFund.dataValues.id, toValidate, type)
-  ).catch(err => console.error(err));
-  console.log(removedHoldings.length + ' holdings removed');
+  // let removedHoldings = await Promise.all(
+  validateWeights(dbFund.dataValues.id, toValidate, type);
+  // ).catch(err => console.error(err));
+  //console.log(removedHoldings.length + ' holdings removed');
 };
 
 // eslint-disable-next-line complexity
@@ -203,8 +204,10 @@ const runGetData = async () => {
     timeout: 3000000
     //slowMo: 1000
   });
-  await getData().then(value => console.log('done'));
-  //browser.close();
+  await getData().then(value => {
+    browser.close();
+    console.log('done');
+  });
 };
 
 runGetData();
