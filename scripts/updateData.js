@@ -27,6 +27,7 @@ const createWeight = async (fund, holding, weight) => {
   }
 };
 
+//this function is checking for any reations on the join table that are no longer valid
 const validateWeights = async (fundId, scrapedData, type) => {
   let removedHoldings = [];
   try {
@@ -125,17 +126,16 @@ const getData = async () => {
     const etfs = data.data.us.funds.etfs.overview.datas;
 
     //scraping and modifying data on each fund returned
-    // eslint-disable-next-line complexity
     for (let i = 0; i < etfs.length; i++) {
-      browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true,
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        timeout: 3000000
-      });
       let etf = etfs[i];
       let newFund = false;
       try {
+        browser = await puppeteer.launch({
+          ignoreHTTPSErrors: true,
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          timeout: 3000000
+        });
         const scrapedData = await scrape(
           browser,
           `https://www.ssga.com${etf.fundUri}`
@@ -200,14 +200,7 @@ const getData = async () => {
 };
 
 const runGetData = async () => {
-  // browser = await puppeteer.launch({
-  //   ignoreHTTPSErrors: true,
-  //   headless: true,
-  //   args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  //   timeout: 3000000
-  // });
-  await getData().then(value => {
-    //browser.close();
+  await getData().then(() => {
     console.log('done');
   });
 };

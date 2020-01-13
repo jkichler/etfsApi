@@ -76,4 +76,6 @@ const init = async () => {
   }
 };
 
-init();
+if (require.main === module) {
+  init();
+}
