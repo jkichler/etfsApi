@@ -1,7 +1,5 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
-const Holdings = require('./holdings');
-const Weights = require('./weights');
 
 const Funds = db.define('funds', {
   name: {
