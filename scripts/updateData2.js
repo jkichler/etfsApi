@@ -105,15 +105,16 @@ const updateHoldings = async (dbFund, scrapedData, type) => {
       console.error(error);
     }
   }
-  let updatedHoldings = await Promise.all(holdings).catch(err =>
-    console.error(err)
-  );
-  console.log(updatedHoldings.length + ' holdings checked and or updated');
+  let updatedHoldings = Promise.all(holdings);
+  console.log(updatedHoldings.length + 'holdings checked and or updated');
   //if holdings change validate weight entries to remove old holdings
-  let toValidate = scrapedData.map(el => Object.keys(el)[0]);
-  let removedHoldings = Promise.all(
-    validateWeights(dbFund.dataValues.id, toValidate, type)
-  ).catch(err => console.error(err));
+  let removedHoldings = await Promise.all(
+    validateWeights(
+      dbFund.dataValues.id,
+      scrapedData.map(el => Object.keys(el)[0]),
+      type
+    )
+  );
   console.log(removedHoldings.length + ' holdings removed');
 };
 
