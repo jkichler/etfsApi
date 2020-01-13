@@ -190,7 +190,8 @@ const getData = async () => {
 const runGetData = async () => {
   browser = await puppeteer.launch({
     headless: true,
-    args: ['--disable-dev-shm-usage']
+    //args: ['--disable-dev-shm-usage']
+    args: ['--no-sandbox']
   });
   await getData().then(value => console.log('done'));
   browser.close();
