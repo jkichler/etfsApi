@@ -191,7 +191,7 @@ const runGetData = async () => {
   browser = await puppeteer.launch({
     headless: true,
     //args: ['--disable-dev-shm-usage']
-    args: ['--no-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
   await getData().then(value => console.log('done'));
   browser.close();
